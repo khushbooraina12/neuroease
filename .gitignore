@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+backend/venv/
+
+# ML model files
+backend/models/
+*.pkl
+*.pt
+*.bin
+
+# Dataset files (optional but recommended)
+*.xlsx
+
+# OS files
+.DS_Store
+Thumbs.db
