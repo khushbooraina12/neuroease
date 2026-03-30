@@ -1,4 +1,4 @@
-NeuroEase: Mood-Aware Real-Time Micro-Intervention System: Adaptive Stress Reduction
+NeuroEase - Mood-Aware Real-Time Micro-Intervention System: Adaptive Stress Reduction: 
 NeuroEase is a machine learning-based system that recommends mental health interventions based on user journal input for stress reduction.
 
 Features:
