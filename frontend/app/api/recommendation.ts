@@ -2,7 +2,7 @@ export async function getRecommendation(
   journalText: string,
   userState: number[]
 ) {
-  const response = await fetch("http://localhost:5000/recommend", {
+  const response = await fetch("http://192.168.56.1:5000/recommend", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

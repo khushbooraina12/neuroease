@@ -1,181 +1,395 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
   Image,
   TouchableOpacity,
-  Alert
+  Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useApp } from '@/contexts/AppContext';
-import { User, Shield, Calendar, Award, Settings, CircleHelp as HelpCircle, LogOut, ChevronRight, Heart, Target, TrendingUp } from 'lucide-react-native';
+import {
+  Shield,
+  Calendar,
+  Award,
+  Settings,
+  CircleHelp as HelpCircle,
+  LogOut,
+  ChevronRight,
+  Heart,
+  Target,
+  TrendingUp,
+} from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { state } = useApp();
+  const { width } = useWindowDimensions();
+
+  const isDesktop = width >= 900;
+
   const { user, checkins, workouts, therapySessions } = state;
-  
-  const totalDays = Math.floor((Date.now() - (Date.now() - 30 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000));
-  const averageMood = checkins.length > 0 
-    ? (checkins.reduce((sum, c) => sum + c.mood, 0) / checkins.length).toFixed(1)
-    : '0';
-  
+
+  const averageMood =
+    checkins.length > 0
+      ? (
+          checkins.reduce((sum, c) => sum + c.mood, 0) /
+          checkins.length
+        ).toFixed(1)
+      : '0';
+
+  const totalMinutes = workouts.reduce(
+    (sum, w) => sum + parseInt(w.duration),
+    0
+  );
+
+  const memberDays = 30;
+
   const handleMenuItem = (item: string) => {
     Alert.alert(item, 'This feature is coming soon!');
   };
 
   const menuItems = [
-    { icon: Settings, title: 'Settings', subtitle: 'Preferences and notifications' },
-    { icon: Shield, title: 'Privacy & Security', subtitle: 'Data protection settings' },
-    { icon: HelpCircle, title: 'Help & Support', subtitle: 'FAQs and contact support' },
+    {
+      icon: Settings,
+      title: 'Settings',
+      subtitle: 'Preferences and notifications',
+    },
+    {
+      icon: Shield,
+      title: 'Privacy & Security',
+      subtitle: 'Data protection settings',
+    },
+    {
+      icon: HelpCircle,
+      title: 'Help & Support',
+      subtitle: 'FAQs and contact support',
+    },
   ];
 
   const achievements = [
-    { 
-      icon: '🔥', 
-      title: 'Consistent Tracker', 
+    {
+      icon: '🔥',
+      title: 'Consistent Tracker',
       description: `${checkins.length} check-ins completed`,
-      earned: checkins.length >= 7
+      earned: checkins.length >= 7,
     },
-    { 
-      icon: '💪', 
-      title: 'Active Lifestyle', 
+    {
+      icon: '💪',
+      title: 'Active Lifestyle',
       description: `${workouts.length} workouts logged`,
-      earned: workouts.length >= 5
+      earned: workouts.length >= 5,
     },
-    { 
-      icon: '🧠', 
-      title: 'Self-Aware', 
+    {
+      icon: '🧠',
+      title: 'Self-Aware',
       description: `${therapySessions.length} therapy sessions recorded`,
-      earned: therapySessions.length >= 3
+      earned: therapySessions.length >= 3,
     },
   ];
 
+  const StatCard = ({
+    icon,
+    value,
+    label,
+  }: any) => (
+    <View style={styles.statCard}>
+      {icon}
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <Image 
-          source={{ uri: user.avatar }} 
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          isDesktop && styles.headerDesktop,
+        ]}
+      >
+        <Image
+          source={{ uri: user.avatar }}
           style={styles.profileImage}
         />
+
         <Text style={styles.userName}>{user.name}</Text>
-        <Text style={styles.userSubtitle}>Wellness Journey Member</Text>
-        
-        <View style={styles.consentBadge}>
-          <Shield size={16} color="#10B981" />
-          <Text style={styles.consentText}>Data sharing consented</Text>
+        <Text style={styles.userSubtitle}>
+          Wellness Journey Member
+        </Text>
+
+        <View style={styles.badge}>
+          <Shield size={15} color="#10B981" />
+          <Text style={styles.badgeText}>
+            Data sharing consented
+          </Text>
         </View>
       </View>
 
-      {/* Stats Overview */}
-      <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Your Progress</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Heart size={24} color="#EF4444" />
-            <Text style={styles.statValue}>{averageMood}</Text>
-            <Text style={styles.statLabel}>Avg Mood</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Target size={24} color="#3B82F6" />
-            <Text style={styles.statValue}>{checkins.length}</Text>
-            <Text style={styles.statLabel}>Check-ins</Text>
-          </View>
-          <View style={styles.statItem}>
-            <TrendingUp size={24} color="#10B981" />
-            <Text style={styles.statValue}>{workouts.length}</Text>
-            <Text style={styles.statLabel}>Workouts</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Achievements */}
-      <View style={styles.achievementsSection}>
-        <Text style={styles.sectionTitle}>Achievements</Text>
-        {achievements.map((achievement, index) => (
-          <View 
-            key={index} 
-            style={[
-              styles.achievementItem,
-              achievement.earned && styles.achievementEarned
-            ]}
-          >
-            <Text style={styles.achievementIcon}>{achievement.icon}</Text>
-            <View style={styles.achievementContent}>
-              <Text style={[
-                styles.achievementTitle,
-                achievement.earned && styles.achievementTitleEarned
-              ]}>
-                {achievement.title}
+      {/* Desktop Grid */}
+      {isDesktop ? (
+        <View style={styles.desktopGrid}>
+          {/* Left Column */}
+          <View style={styles.leftColumn}>
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>
+                Your Progress
               </Text>
-              <Text style={styles.achievementDescription}>
-                {achievement.description}
-              </Text>
-            </View>
-            {achievement.earned && (
-              <Award size={20} color="#F59E0B" />
-            )}
-          </View>
-        ))}
-      </View>
 
-      {/* Quick Stats */}
-      <View style={styles.quickStatsSection}>
-        <Text style={styles.sectionTitle}>This Month</Text>
-        <View style={styles.quickStatItem}>
-          <Calendar size={20} color="#6B7280" />
-          <Text style={styles.quickStatText}>
-            Member for {Math.max(1, Math.floor((Date.now() - (Date.now() - 30 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000)))} days
-          </Text>
-        </View>
-        <View style={styles.quickStatItem}>
-          <TrendingUp size={20} color="#6B7280" />
-          <Text style={styles.quickStatText}>
-            {workouts.reduce((sum, w) => sum + parseInt(w.duration), 0)} minutes of activity
-          </Text>
-        </View>
-        <View style={styles.quickStatItem}>
-          <Heart size={20} color="#6B7280" />
-          <Text style={styles.quickStatText}>
-            {therapySessions.length} therapy sessions recorded
-          </Text>
-        </View>
-      </View>
+              <View style={styles.statsRow}>
+                <StatCard
+                  icon={
+                    <Heart
+                      size={22}
+                      color="#EF4444"
+                    />
+                  }
+                  value={averageMood}
+                  label="Avg Mood"
+                />
 
-      {/* Menu Items */}
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.menuItem}
-            onPress={() => handleMenuItem(item.title)}
-          >
-            <View style={styles.menuItemLeft}>
-              <View style={styles.menuItemIcon}>
-                <item.icon size={20} color="#6B7280" />
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>{item.title}</Text>
-                <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+                <StatCard
+                  icon={
+                    <Target
+                      size={22}
+                      color="#3B82F6"
+                    />
+                  }
+                  value={checkins.length}
+                  label="Check-ins"
+                />
+
+                <StatCard
+                  icon={
+                    <TrendingUp
+                      size={22}
+                      color="#10B981"
+                    />
+                  }
+                  value={workouts.length}
+                  label="Workouts"
+                />
               </View>
             </View>
-            <ChevronRight size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-        ))}
-      </View>
 
-      {/* Sign Out */}
-      <TouchableOpacity 
-        style={styles.signOutButton}
-        onPress={() => Alert.alert('Sign Out', 'This feature is coming soon!')}
-      >
-        <LogOut size={20} color="#EF4444" />
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>
+                Achievements
+              </Text>
 
-      <View style={styles.bottomSpace} />
+              {achievements.map((item, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.achievementRow,
+                    !item.earned &&
+                      styles.lockedAchievement,
+                  ]}
+                >
+                  <Text
+                    style={
+                      styles.achievementEmoji
+                    }
+                  >
+                    {item.icon}
+                  </Text>
+
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={
+                        styles.achievementTitle
+                      }
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={
+                        styles.achievementDesc
+                      }
+                    >
+                      {item.description}
+                    </Text>
+                  </View>
+
+                  {item.earned && (
+                    <Award
+                      size={18}
+                      color="#F59E0B"
+                    />
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Right Column */}
+          <View style={styles.rightColumn}>
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>
+                This Month
+              </Text>
+
+              <View style={styles.quickItem}>
+                <Calendar
+                  size={18}
+                  color="#6B7280"
+                />
+                <Text style={styles.quickText}>
+                  Member for {memberDays} days
+                </Text>
+              </View>
+
+              <View style={styles.quickItem}>
+                <TrendingUp
+                  size={18}
+                  color="#6B7280"
+                />
+                <Text style={styles.quickText}>
+                  {totalMinutes} minutes of activity
+                </Text>
+              </View>
+
+              <View style={styles.quickItem}>
+                <Heart
+                  size={18}
+                  color="#6B7280"
+                />
+                <Text style={styles.quickText}>
+                  {therapySessions.length}{' '}
+                  therapy sessions recorded
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>
+                Account
+              </Text>
+
+              {menuItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.menuRow}
+                  onPress={() =>
+                    handleMenuItem(
+                      item.title
+                    )
+                  }
+                >
+                  <View
+                    style={
+                      styles.menuIconWrap
+                    }
+                  >
+                    <item.icon
+                      size={18}
+                      color="#6B7280"
+                    />
+                  </View>
+
+                  <View
+                    style={{
+                      flex: 1,
+                    }}
+                  >
+                    <Text
+                      style={
+                        styles.menuTitle
+                      }
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={
+                        styles.menuSub
+                      }
+                    >
+                      {item.subtitle}
+                    </Text>
+                  </View>
+
+                  <ChevronRight
+                    size={16}
+                    color="#94A3B8"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={
+                styles.signOutButton
+              }
+              onPress={() =>
+                Alert.alert(
+                  'Sign Out',
+                  'This feature is coming soon!'
+                )
+              }
+            >
+              <LogOut
+                size={18}
+                color="#EF4444"
+              />
+              <Text
+                style={
+                  styles.signOutText
+                }
+              >
+                Sign Out
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <>
+          {/* MOBILE VIEW */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              Your Progress
+            </Text>
+
+            <View style={styles.statsRow}>
+              <StatCard
+                icon={
+                  <Heart
+                    size={22}
+                    color="#EF4444"
+                  />
+                }
+                value={averageMood}
+                label="Avg Mood"
+              />
+              <StatCard
+                icon={
+                  <Target
+                    size={22}
+                    color="#3B82F6"
+                  />
+                }
+                value={checkins.length}
+                label="Check-ins"
+              />
+              <StatCard
+                icon={
+                  <TrendingUp
+                    size={22}
+                    color="#10B981"
+                  />
+                }
+                value={workouts.length}
+                label="Workouts"
+              />
+            </View>
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -183,213 +397,209 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F8FAFC',
   },
-  profileHeader: {
+
+  header: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: 24,
     paddingTop: 60,
     alignItems: 'center',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    marginBottom: 18,
   },
+
+  headerDesktop: {
+    maxWidth: 1400,
+    alignSelf: 'center',
+    width: '94%',
+    borderRadius: 28,
+    marginTop: 20,
+  },
+
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     borderWidth: 4,
     borderColor: '#FCE7F3',
     marginBottom: 16,
   },
+
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#374151',
-    marginBottom: 4,
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#0F172A',
   },
+
   userSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 12,
+    color: '#64748B',
+    marginTop: 6,
   },
-  consentBadge: {
+
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ECFDF5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  consentText: {
-    fontSize: 12,
-    color: '#059669',
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  statsSection: {
-    backgroundColor: '#FFFFFF',
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#374151',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  achievementsSection: {
-    backgroundColor: '#FFFFFF',
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  achievementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    opacity: 0.5,
-  },
-  achievementEarned: {
-    opacity: 1,
-  },
-  achievementIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  achievementContent: {
-    flex: 1,
-  },
-  achievementTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginBottom: 2,
-  },
-  achievementTitleEarned: {
-    color: '#374151',
-  },
-  achievementDescription: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  quickStatsSection: {
-    backgroundColor: '#FFFFFF',
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  quickStatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingHorizontal: 14,
     paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 14,
   },
-  quickStatText: {
-    fontSize: 14,
-    color: '#374151',
-    marginLeft: 12,
+
+  badgeText: {
+    marginLeft: 6,
+    color: '#059669',
+    fontWeight: '600',
+    fontSize: 13,
   },
-  menuSection: {
+
+  desktopGrid: {
+    flexDirection: 'row',
+    gap: 20,
+    paddingHorizontal: 20,
+    maxWidth: 1400,
+    width: '94%',
+    alignSelf: 'center',
+  },
+
+  leftColumn: {
+    flex: 2,
+    gap: 20,
+  },
+
+  rightColumn: {
+    flex: 1.2,
+    gap: 20,
+  },
+
+  card: {
     backgroundColor: '#FFFFFF',
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 22,
+    padding: 22,
+    marginHorizontal: 20,
+    marginBottom: 18,
   },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 18,
   },
-  menuItemLeft: {
+
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 12,
+  },
+
+  statCard: {
     flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
   },
-  menuItemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 8,
+    color: '#0F172A',
+  },
+
+  statLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 4,
+  },
+
+  achievementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+
+  lockedAchievement: {
+    opacity: 0.45,
+  },
+
+  achievementEmoji: {
+    fontSize: 24,
+    marginRight: 14,
+  },
+
+  achievementTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+
+  achievementDesc: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 4,
+  },
+
+  quickItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+
+  quickText: {
+    marginLeft: 10,
+    color: '#334155',
+    fontSize: 14,
+  },
+
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+
+  menuIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  menuItemContent: {
-    flex: 1,
+
+  menuTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
   },
-  menuItemTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 2,
-  },
-  menuItemSubtitle: {
+
+  menuSub: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#64748B',
+    marginTop: 4,
   },
+
   signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#FEF2F2',
-    marginHorizontal: 20,
     paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+
   signOutText: {
-    color: '#EF4444',
-    fontSize: 16,
-    fontWeight: '500',
     marginLeft: 8,
-  },
-  bottomSpace: {
-    height: 40,
+    color: '#EF4444',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

@@ -1,6 +1,23 @@
 export function routeFromRecommendation(id: string) {
-  if (id.startsWith("breathing") || id.startsWith("grounding") || id.startsWith("meditation")) {
-    return { pathname: "/interventions", params: { recommended: id } };
+  console.log("Received Recommendation:", id);
+
+  if (!id) {
+    return {
+      pathname: "/interventions",
+      params: { recommended: "breathing_01" },
+    };
+  }
+
+  if (
+    id.startsWith("breathing") ||
+    id.startsWith("grounding") ||
+    id.startsWith("meditation") ||
+    id.startsWith("gratitude")
+  ) {
+    return {
+      pathname: "/interventions",
+      params: { recommended: id },
+    };
   }
 
   if (id.startsWith("workout")) {
@@ -15,6 +32,9 @@ export function routeFromRecommendation(id: string) {
     return { pathname: "/messages" };
   }
 
-  // fallback
-  return { pathname: "/interventions" };
+  // smart fallback
+  return {
+    pathname: "/interventions",
+    params: { recommended: "breathing_01" },
+  };
 }

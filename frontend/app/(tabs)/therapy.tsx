@@ -1,239 +1,583 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert
+  Alert,
+  Platform,
+  useWindowDimensions
 } from 'react-native';
 import { useApp } from '@/contexts/AppContext';
-import { 
-  Brain, 
-  Plus, 
+import {
+  Brain,
+  Plus,
   Calendar,
-  FileText,
   TrendingUp,
-  Smile,
-  Heart
+  Heart,
+  ArrowLeft
 } from 'lucide-react-native';
 
 export default function TherapyScreen() {
   const { api, state } = useApp();
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [summary, setSummary] = useState('');
-  const [moodBefore, setMoodBefore] = useState('');
-  const [moodAfter, setMoodAfter] = useState('');
+  const { width } = useWindowDimensions();
+
+  const isDesktop =
+    Platform.OS === 'web' && width >= 900;
+
+  const [showAddForm, setShowAddForm] =
+    useState(false);
+
+  const [summary, setSummary] =
+    useState('');
+
+  const [moodBefore, setMoodBefore] =
+    useState('');
+
+  const [moodAfter, setMoodAfter] =
+    useState('');
 
   const handleSubmit = () => {
     if (!summary.trim()) {
-      Alert.alert('Session Summary Required', 'Please add a summary of your therapy session.');
+      Alert.alert(
+        'Session Summary Required',
+        'Please add a summary of your therapy session.'
+      );
       return;
     }
 
     api.addTherapySession({
       summary: summary.trim(),
-      mood_before: moodBefore ? parseInt(moodBefore) : undefined,
-      mood_after: moodAfter ? parseInt(moodAfter) : undefined,
+      mood_before: moodBefore
+        ? parseInt(moodBefore)
+        : undefined,
+      mood_after: moodAfter
+        ? parseInt(moodAfter)
+        : undefined
     });
 
-    Alert.alert('Session Recorded!', 'Your therapy session has been saved successfully.');
+    Alert.alert(
+      'Session Recorded!',
+      'Your therapy session has been saved.'
+    );
+
     setSummary('');
     setMoodBefore('');
     setMoodAfter('');
     setShowAddForm(false);
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (
+    timestamp: number
+  ) =>
+    new Date(timestamp).toLocaleDateString(
+      'en-US',
+      {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }
+    );
 
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatTime = (
+    timestamp: number
+  ) =>
+    new Date(timestamp).toLocaleTimeString(
+      'en-US',
+      {
+        hour: '2-digit',
+        minute: '2-digit'
+      }
+    );
 
-  const getMoodImprovement = (before?: number, after?: number) => {
+  const getMoodImprovement = (
+    before?: number,
+    after?: number
+  ) => {
     if (!before || !after) return null;
     return after - before;
   };
 
-  const totalSessions = state.therapySessions.length;
-  const recentSessions = state.therapySessions.slice(0, 5);
+  const totalSessions =
+    state.therapySessions.length;
 
+  const improvedCount =
+    state.therapySessions.filter(
+      s =>
+        s.mood_after &&
+        s.mood_before &&
+        s.mood_after >
+          s.mood_before
+    ).length;
+
+  const avgMood =
+    Math.round(
+      state.therapySessions
+        .filter(s => s.mood_after)
+        .reduce(
+          (acc, s) =>
+            acc +
+            (s.mood_after || 0),
+          0
+        ) /
+        state.therapySessions.filter(
+          s => s.mood_after
+        ).length
+    ) || 0;
+
+  const recentSessions =
+    state.therapySessions.slice(0, 5);
+
+  /* =======================
+     FORM SCREEN
+  ======================= */
   if (showAddForm) {
     return (
       <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <Brain size={32} color="#8B5CF6" />
-          <Text style={styles.title}>Record Session</Text>
-          <Text style={styles.subtitle}>Document your therapy progress</Text>
-        </View>
+        <View
+          style={[
+            styles.pageWrap,
+            isDesktop &&
+              styles.pageWrapDesktop
+          ]}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() =>
+                setShowAddForm(false)
+              }
+            >
+              <ArrowLeft
+                size={20}
+                color="#374151"
+              />
+            </TouchableOpacity>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Mood Before Session (1-10)</Text>
-          <TextInput
-            style={styles.moodInput}
-            value={moodBefore}
-            onChangeText={setMoodBefore}
-            keyboardType="numeric"
-            placeholder="Optional"
-            maxLength={2}
-          />
-        </View>
+            <Brain
+              size={34}
+              color="#8B5CF6"
+            />
+            <Text style={styles.title}>
+              Record Session
+            </Text>
+            <Text style={styles.subtitle}>
+              Document your therapy
+              progress
+            </Text>
+          </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Session Summary</Text>
-          <Text style={styles.inputHint}>
-            What did you discuss? What insights did you gain? How did you feel?
-          </Text>
-          <TextInput
-            style={styles.summaryInput}
-            multiline
-            placeholder="Today we talked about..."
-            value={summary}
-            onChangeText={setSummary}
-            maxLength={1000}
-          />
-          <Text style={styles.characterCount}>{summary.length}/1000</Text>
-        </View>
-
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Mood After Session (1-10)</Text>
-          <TextInput
-            style={styles.moodInput}
-            value={moodAfter}
-            onChangeText={setMoodAfter}
-            keyboardType="numeric"
-            placeholder="Optional"
-            maxLength={2}
-          />
-        </View>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Plus size={20} color="#FFFFFF" />
-            <Text style={styles.submitButtonText}>Save Session</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.cancelButton} 
-            onPress={() => setShowAddForm(false)}
+          <View
+            style={[
+              styles.formGrid,
+              isDesktop &&
+                styles.formGridDesktop
+            ]}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+            {/* LEFT */}
+            <View style={{ flex: 1 }}>
+              <View style={styles.card}>
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  Mood Before
+                  Session
+                </Text>
+
+                <TextInput
+                  style={
+                    styles.input
+                  }
+                  value={moodBefore}
+                  onChangeText={
+                    setMoodBefore
+                  }
+                  keyboardType="numeric"
+                  placeholder="1-10"
+                />
+
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {
+                      marginTop: 18
+                    }
+                  ]}
+                >
+                  Mood After
+                  Session
+                </Text>
+
+                <TextInput
+                  style={
+                    styles.input
+                  }
+                  value={moodAfter}
+                  onChangeText={
+                    setMoodAfter
+                  }
+                  keyboardType="numeric"
+                  placeholder="1-10"
+                />
+              </View>
+            </View>
+
+            {/* RIGHT */}
+            <View style={{ flex: 1 }}>
+              <View style={styles.card}>
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  Session Summary
+                </Text>
+
+                <Text
+                  style={
+                    styles.inputHint
+                  }
+                >
+                  What did you
+                  discuss? What did
+                  you learn? How do
+                  you feel now?
+                </Text>
+
+                <TextInput
+                  style={
+                    styles.summaryInput
+                  }
+                  multiline
+                  value={summary}
+                  onChangeText={
+                    setSummary
+                  }
+                  placeholder="Today we talked about..."
+                  maxLength={1000}
+                />
+
+                <Text
+                  style={
+                    styles.characterCount
+                  }
+                >
+                  {summary.length}
+                  /1000
+                </Text>
+
+                <TouchableOpacity
+                  style={
+                    styles.addButton
+                  }
+                  onPress={
+                    handleSubmit
+                  }
+                >
+                  <Plus
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                  <Text
+                    style={
+                      styles.addButtonText
+                    }
+                  >
+                    Save Session
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={
+                    styles.cancelBtn
+                  }
+                  onPress={() =>
+                    setShowAddForm(
+                      false
+                    )
+                  }
+                >
+                  <Text
+                    style={
+                      styles.cancelText
+                    }
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
     );
   }
 
+  /* =======================
+     MAIN SCREEN
+  ======================= */
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Brain size={32} color="#8B5CF6" />
-        <Text style={styles.title}>Therapy Journal</Text>
-        <Text style={styles.subtitle}>Track your healing journey</Text>
-      </View>
-
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Calendar size={20} color="#8B5CF6" />
-          <Text style={styles.statValue}>{totalSessions}</Text>
-          <Text style={styles.statLabel}>Sessions</Text>
-        </View>
-        <View style={styles.statCard}>
-          <TrendingUp size={20} color="#10B981" />
-          <Text style={styles.statValue}>
-            {state.therapySessions.filter(s => s.mood_after && s.mood_before && s.mood_after > s.mood_before).length}
-          </Text>
-          <Text style={styles.statLabel}>Improved</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Heart size={20} color="#EF4444" />
-          <Text style={styles.statValue}>
-            {Math.round(state.therapySessions.filter(s => s.mood_after).reduce((acc, s) => acc + (s.mood_after || 0), 0) / state.therapySessions.filter(s => s.mood_after).length) || 0}
-          </Text>
-          <Text style={styles.statLabel}>Avg Mood</Text>
-        </View>
-      </View>
-
-      {/* Add Session Button */}
-      <TouchableOpacity 
-        style={styles.addButton} 
-        onPress={() => setShowAddForm(true)}
+      <View
+        style={[
+          styles.pageWrap,
+          isDesktop &&
+            styles.pageWrapDesktop
+        ]}
       >
-        <Plus size={24} color="#FFFFFF" />
-        <Text style={styles.addButtonText}>Record New Session</Text>
-      </TouchableOpacity>
+        <View style={styles.header}>
+          <Brain
+            size={34}
+            color="#8B5CF6"
+          />
+          <Text style={styles.title}>
+            Therapy Journal
+          </Text>
+          <Text style={styles.subtitle}>
+            Track your healing
+            journey
+          </Text>
+        </View>
 
-      {/* Session History */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Session History</Text>
-        {state.therapySessions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No sessions recorded yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Start documenting your therapy journey to track your progress
+        <View
+          style={[
+            styles.statsRow,
+            isDesktop &&
+              styles.statsDesktop
+          ]}
+        >
+          <View style={styles.statCard}>
+            <Calendar
+              size={20}
+              color="#8B5CF6"
+            />
+            <Text
+              style={styles.statValue}
+            >
+              {totalSessions}
+            </Text>
+            <Text
+              style={styles.statLabel}
+            >
+              Sessions
             </Text>
           </View>
-        ) : (
-          recentSessions.map((session) => {
-            const improvement = getMoodImprovement(session.mood_before, session.mood_after);
-            
-            return (
-              <View key={session.id} style={styles.sessionItem}>
-                <View style={styles.sessionHeader}>
-                  <Text style={styles.sessionDate}>{formatDate(session.date)}</Text>
-                  <Text style={styles.sessionTime}>{formatTime(session.date)}</Text>
-                </View>
-                
-                <Text style={styles.sessionSummary} numberOfLines={3}>
-                  {session.summary}
-                </Text>
-                
-                {(session.mood_before || session.mood_after) && (
-                  <View style={styles.moodRow}>
-                    {session.mood_before && (
-                      <View style={styles.moodIndicator}>
-                        <Text style={styles.moodLabel}>Before: </Text>
-                        <Text style={styles.moodValue}>{session.mood_before}/10</Text>
-                      </View>
-                    )}
-                    {session.mood_after && (
-                      <View style={styles.moodIndicator}>
-                        <Text style={styles.moodLabel}>After: </Text>
-                        <Text style={styles.moodValue}>{session.mood_after}/10</Text>
-                      </View>
-                    )}
-                    {improvement !== null && (
-                      <View style={styles.improvementBadge}>
-                        <Text style={[
-                          styles.improvementText,
-                          improvement > 0 ? styles.positiveImprovement : 
-                          improvement < 0 ? styles.negativeImprovement : styles.neutralImprovement
-                        ]}>
-                          {improvement > 0 ? '+' : ''}{improvement}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              </View>
-            );
-          })
-        )}
-      </View>
 
-      <View style={styles.bottomSpace} />
+          <View style={styles.statCard}>
+            <TrendingUp
+              size={20}
+              color="#10B981"
+            />
+            <Text
+              style={styles.statValue}
+            >
+              {improvedCount}
+            </Text>
+            <Text
+              style={styles.statLabel}
+            >
+              Improved
+            </Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Heart
+              size={20}
+              color="#EF4444"
+            />
+            <Text
+              style={styles.statValue}
+            >
+              {avgMood}
+            </Text>
+            <Text
+              style={styles.statLabel}
+            >
+              Avg Mood
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() =>
+            setShowAddForm(true)
+          }
+        >
+          <Plus
+            size={22}
+            color="#FFFFFF"
+          />
+          <Text
+            style={
+              styles.addButtonText
+            }
+          >
+            Record New Session
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>
+            Session History
+          </Text>
+
+          {recentSessions.length ===
+          0 ? (
+            <View
+              style={
+                styles.emptyState
+              }
+            >
+              <Text
+                style={
+                  styles.emptyTitle
+                }
+              >
+                No sessions
+                recorded yet
+              </Text>
+              <Text
+                style={
+                  styles.emptySub
+                }
+              >
+                Start documenting
+                your journey.
+              </Text>
+            </View>
+          ) : (
+            recentSessions.map(
+              session => {
+                const change =
+                  getMoodImprovement(
+                    session.mood_before,
+                    session.mood_after
+                  );
+
+                return (
+                  <View
+                    key={
+                      session.id
+                    }
+                    style={
+                      styles.sessionItem
+                    }
+                  >
+                    <View
+                      style={
+                        styles.sessionTop
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.sessionDate
+                        }
+                      >
+                        {formatDate(
+                          session.date
+                        )}
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.sessionTime
+                        }
+                      >
+                        {formatTime(
+                          session.date
+                        )}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={
+                        styles.sessionSummary
+                      }
+                    >
+                      {
+                        session.summary
+                      }
+                    </Text>
+
+                    <View
+                      style={
+                        styles.badgeRow
+                      }
+                    >
+                      {session.mood_before && (
+                        <Text
+                          style={
+                            styles.badge
+                          }
+                        >
+                          Before{' '}
+                          {
+                            session.mood_before
+                          }
+                          /10
+                        </Text>
+                      )}
+
+                      {session.mood_after && (
+                        <Text
+                          style={
+                            styles.badge
+                          }
+                        >
+                          After{' '}
+                          {
+                            session.mood_after
+                          }
+                          /10
+                        </Text>
+                      )}
+
+                      {change !==
+                        null && (
+                        <Text
+                          style={[
+                            styles.badge,
+                            {
+                              color:
+                                change >
+                                0
+                                  ? '#10B981'
+                                  : change <
+                                    0
+                                  ? '#EF4444'
+                                  : '#6B7280'
+                            }
+                          ]}
+                        >
+                          {change >
+                          0
+                            ? '+'
+                            : ''}
+                          {
+                            change
+                          }
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              }
+            )
+          )}
+        </View>
+
+        <View
+          style={{
+            height: 40
+          }}
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -241,249 +585,217 @@ export default function TherapyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F9FAFB'
   },
+
+  pageWrap: {
+    paddingBottom: 20
+  },
+
+  pageWrapDesktop: {
+    maxWidth: 1300,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: 24
+  },
+
   header: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    paddingTop: 60,
+    margin: 20,
+    padding: 28,
+    borderRadius: 22,
     alignItems: 'center',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    position: 'relative'
   },
+
+  backBtn: {
+    position: 'absolute',
+    left: 20,
+    top: 20,
+    padding: 8
+  },
+
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#374151',
-    marginTop: 12,
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 10
   },
+
   subtitle: {
     fontSize: 16,
     color: '#6B7280',
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 22,
+    marginTop: 8
   },
-  statsContainer: {
+
+  statsRow: {
+    paddingHorizontal: 20
+  },
+
+  statsDesktop: {
     flexDirection: 'row',
-    padding: 20,
-    justifyContent: 'space-between',
+    gap: 16
   },
+
   statCard: {
-    backgroundColor: '#FFFFFF',
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 18,
     alignItems: 'center',
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 16
   },
+
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#374151',
-    marginTop: 8,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 8
   },
+
   statLabel: {
-    fontSize: 12,
     color: '#6B7280',
-    marginTop: 4,
+    marginTop: 6
   },
+
   addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#8B5CF6',
     marginHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20
   },
+
   addButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    fontWeight: '700',
+    marginLeft: 8
   },
-  section: {
+
+  card: {
     backgroundColor: '#FFFFFF',
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 22,
+    borderRadius: 18
   },
+
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 14
   },
+
+  formGrid: {},
+
+  formGridDesktop: {
+    flexDirection: 'row',
+    gap: 18
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
+    padding: 16,
+    fontSize: 18
+  },
+
+  inputHint: {
+    color: '#6B7280',
+    marginBottom: 12,
+    lineHeight: 20
+  },
+
+  summaryInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
+    padding: 16,
+    minHeight: 180,
+    textAlignVertical: 'top'
+  },
+
+  characterCount: {
+    textAlign: 'right',
+    color: '#9CA3AF',
+    marginTop: 8
+  },
+
+  cancelBtn: {
+    padding: 14,
+    alignItems: 'center'
+  },
+
+  cancelText: {
+    color: '#6B7280',
+    fontWeight: '600'
+  },
+
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 30
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151'
+  },
+
+  emptySub: {
+    marginTop: 6,
+    color: '#6B7280'
+  },
+
   sessionItem: {
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F3F4F6'
   },
-  sessionHeader: {
+
+  sessionTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between'
   },
+
   sessionDate: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  sessionTime: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  sessionSummary: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  moodRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  moodIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  moodLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  moodValue: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  improvementBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-  },
-  improvementText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  positiveImprovement: {
-    color: '#10B981',
-  },
-  negativeImprovement: {
-    color: '#EF4444',
-  },
-  neutralImprovement: {
-    color: '#6B7280',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  formSection: {
-    backgroundColor: '#FFFFFF',
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  inputHint: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  moodInput: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 18,
-    textAlign: 'center',
-    backgroundColor: '#F9FAFB',
-  },
-  summaryInput: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    minHeight: 120,
-    textAlignVertical: 'top',
-    backgroundColor: '#F9FAFB',
-  },
-  characterCount: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    textAlign: 'right',
-    marginTop: 8,
-  },
-  actionButtons: {
-    padding: 20,
-  },
-  submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#8B5CF6',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
+    color: '#1F2937'
   },
-  cancelButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  cancelButtonText: {
+
+  sessionTime: {
     color: '#6B7280',
-    fontSize: 16,
+    fontSize: 13
   },
-  bottomSpace: {
-    height: 40,
+
+  sessionSummary: {
+    color: '#4B5563',
+    marginTop: 10,
+    lineHeight: 22
   },
+
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12
+  },
+
+  badge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '600'
+  }
 });
